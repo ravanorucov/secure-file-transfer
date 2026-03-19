@@ -122,6 +122,8 @@ python app.py
 * Add file size/type validation
 * UI/UX improvements
 
+---
 
 ⭐ Support
+
 If you like this project, give it a star ⭐ on GitHub!
