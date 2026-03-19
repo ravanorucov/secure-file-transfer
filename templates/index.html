@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure File Transfer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-left: 365px; ">
+            <h1>Welcome, {{ session.username }}</h1>
+            <a class="logout" href="{{ url_for('logout') }}">Logout</a>
+        </header>
+
+        <div class="content">
+            <div class="left">
+                <h2>Encrypt & Share</h2>
+                <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+                    <label>Choose file:</label>
+                    <input type="file" name="file" required>
+                    <label>Transfer Password:</label>
+                    <input type="password" name="password" required>
+                    <button type="submit">Upload and Encrypt</button>
+                </form>
+            </div>
+
+            <div class="right">
+                <h2>Receive & Decrypt</h2>
+                <form method="POST" action="{{ url_for('decrypt_file_endpoint') }}">
+                    <label>Select Shared File:</label>
+                    <select name="filename" required style="width: 100%; padding: 11px; margin-top: 5px; margin-bottom: 18px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="">-- Choose a file --</option>
+                        {% for file in files %}
+                            <option value="{{ file['filename'] }}">{{ file['filename'] }}</option>
+                        {% endfor %}
+                    </select>
+                    <label>Enter File Password:</label>
+                    <input type="password" name="password" required>
+                    <button type="submit">Decrypt & Download</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="files">
+            <h2>Public Secure Transfer List</h2>
+            <div class="file-list">
+                {% for file in files %}
+                    <div class="file-item" style="display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; align-items: center;">
+                        <span>{{ loop.index }}. <strong>{{ file['filename'] }}</strong></span>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <a href="{{ url_for('download_encrypted_file', filename=file['filename']) }}" style="color: #007bff; text-decoration: none;">Download (Enc)</a>
+                            
+                            {% if file['user_id'] == session['user_id'] %}
+                                <form action="{{ url_for('delete_file', filename=file['filename']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this file?');">
+                                    <button type="submit" style="background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: bold; padding: 0;">Delete My File</button>
+                                </form>
+                            {% else %}
+                                <span style="color: #666; font-size: 0.9em;">Shared by: <strong>{{ file['username'] }}</strong></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+    window.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            if (!window.performance.getEntriesByType('navigation')[0].type === 'reload') {
+                navigator.sendBeacon("{{ url_for('logout') }}");
+            }
+        }
+    });
+
+    window.addEventListener('pagehide', function() {
+        navigator.sendBeacon("{{ url_for('logout') }}");
+    });
+    </script>
+</body>
+</html>
